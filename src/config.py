@@ -27,8 +27,17 @@ class PostgresSettings(BaseSettings):
         return self
 
 
+class RedisSettings(BaseSettings):
+    redis_host: str
+    redis_port: int
+    redis_databases: int
+    redis_password: str
+
+
 class Settings(BaseSettings):
     postgres: PostgresSettings
+
+    redis: RedisSettings
 
     model_config = SettingsConfigDict(
         env_nested_delimiter='__',

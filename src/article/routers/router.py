@@ -21,6 +21,19 @@ async def create_article(
 
 
 @router.get(
+    path='/cached/{article_id}',
+    summary='Получение кешированной статьи по ее ID',
+    description='Получение кешированной статьи по ее ID',
+    response_model=ArticleSchema
+)
+async def get_cached_article(
+    article_id: int,
+    service: ArticleService = Depends(article_service)
+):
+    return await service.get_cached(article_id)
+
+
+@router.get(
     path='/trending',
     summary='Получение случайной статьи',
     description='Получение случайной статьи',

@@ -28,7 +28,7 @@ class CommentService(BaseService[CommentModel]):
         super().__init__(
             CommentRepository(db),
             CommentModel,
-            model_name='Коментарий'
+            model_name='comment'
         )
         self.__article_service = article_service
 

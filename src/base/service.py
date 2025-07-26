@@ -17,7 +17,7 @@ class BaseService[M]:
         M: Класс SQLAlchemy-модели сущности
     '''
 
-    __wrong_filter_error = ValueError(
+    _wrong_filter_error = ValueError(
         'Фильтр поиска должен включать в себя хотя бы одну пару '
         '{"Название_атрибута": Значение_атрибута}'
     )
@@ -36,6 +36,7 @@ class BaseService[M]:
         Args:
             repository (BaseRepository): Репозиторий для работы с БД
             model_class (type[M]): Класс SQLAlchemy-модели
+            model_name (str): Название SQLAlchemy-модели на английском
         '''
         self.repository = repository
         self.model_class = model_class
@@ -48,21 +49,20 @@ class BaseService[M]:
         self,
         filter: dict[str, Any],
         model_attrs: list[_AttrType] = []
-    ) -> M | None:
+    ) -> M:
         '''
         Поиск в БД сущности по фильтру
 
         Args:
             filter (dict[str, Any]): Фильтр поиска сущности в БД. \
                 `{"Название_атрибута": Значение_атрибута}`
+            model_attrs (list[_AttrType]): Дополнительно подгружаемые сложные \
+                аттрибуты SQLAlchemy модели
+
         '''
 
         if not self._is_correct_filter(filter):
-            raise self.__wrong_filter_error
-
-        exists = await self.exists(filter)
-        if not exists:
-            raise NotFoundError('Статья', filter)
+            raise self._wrong_filter_error
 
         statement = self._add_model_attrs_to_statement(
             select(self.model_class),
@@ -71,6 +71,8 @@ class BaseService[M]:
         model = await self.repository.scalars_one_or_none(
             statement.filter_by(**filter)
         )
+        if not model:
+            raise NotFoundError(self.model_name, filter)
         await self.repository.db.flush()
         return model
 
@@ -111,7 +113,7 @@ class BaseService[M]:
                 `{"Название_атрибута": Значение_атрибута}`
         '''
         if not self._is_correct_filter(filter):
-            raise self.__wrong_filter_error
+            raise self._wrong_filter_error
 
         statement = self._add_model_attrs_to_statement(
             select(self.model_class),
@@ -163,7 +165,7 @@ class BaseService[M]:
         '''
         exists = await self.exists(filter)
         if not exists:
-            raise NotFoundError('Статья', filter)
+            raise NotFoundError(self.model_name, filter)
         statement = delete(self.model_class).filter_by(**filter)
         await self.repository.delete(statement)
 

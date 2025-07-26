@@ -1,3 +1,4 @@
+from typing import AsyncGenerator
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.database import get_db
@@ -9,10 +10,16 @@ import redis.asyncio as redis
 __redis_service_instance = RedisService()
 
 
+async def redis_service() -> AsyncGenerator[redis.Redis, None]:
+    async with __redis_service_instance.client() as client:
+        yield client
+
+
 def article_service(
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    service: redis.Redis = Depends(redis_service)
 ) -> ArticleService:
-    return ArticleService(db)
+    return ArticleService(db, service)
 
 
 def comment_service(
@@ -20,9 +27,3 @@ def comment_service(
     article_service: ArticleService = Depends(article_service)
 ) -> CommentService:
     return CommentService(db, article_service)
-
-
-def redis_service(
-    client: redis.Redis = Depends(__redis_service_instance.client)
-) -> redis.Redis:
-    return client

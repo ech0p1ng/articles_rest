@@ -4,6 +4,8 @@ from article.repositories.repository import ArticleRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 from exceptions.exception import AlreadyExistsError, NotFoundError
 import random
+from redis.asyncio import Redis
+from article.schemas.schema import ArticleSchema
 
 
 class ArticleService(BaseService[ArticleModel]):
@@ -13,7 +15,8 @@ class ArticleService(BaseService[ArticleModel]):
 
     def __init__(
         self,
-        db: AsyncSession
+        db: AsyncSession,
+        redis_service: Redis
     ) -> None:
         '''
         Бизнес-логика для статей
@@ -24,8 +27,9 @@ class ArticleService(BaseService[ArticleModel]):
         super().__init__(
             ArticleRepository(db),
             ArticleModel,
-            model_name='Статья'
+            model_name='article'
         )
+        self.redis_service = redis_service
 
     async def create(self, model: ArticleModel) -> ArticleModel:
         '''
@@ -43,8 +47,66 @@ class ArticleService(BaseService[ArticleModel]):
     async def get_tranding(self) -> ArticleModel:
         '''
         Получение случайной статьи
+
+        Returns:
+            ArticleModel: SQLAlchemy-модель случайной статьи
         '''
         models = await self.get_all()
         if not models:
             raise NotFoundError(self.model_name)
         return random.choice(models)
+
+    async def get_cached(self, id: int) -> ArticleModel:
+        '''
+        Получение кешированной статьи из Redis
+
+        Args:
+            id (int): ID статьи`
+
+        Returns:
+            ArticleModel: SQLAlchemy-модель найденой статьи
+        '''
+
+        try:
+            model = await self.__get_from_cache(id)
+        except NotFoundError:
+            filter = {'id': id}
+            model = await self.get(filter)
+            if not model:
+                raise NotFoundError(self.model_name, filter)
+            await self.__cache(model)
+        return model
+
+    async def __get_from_cache(self, id: int) -> ArticleModel:
+        '''
+        Получает из Redis кешированные данные о SQLAlchemy-модели
+
+        Args:
+            id (int): ID SQLAlchemy-модели
+
+        Returns:
+            ArticleModel: SQLAlchemy-модель
+
+        Raises:
+            NotFoundError: Не удалось найти
+        '''
+        key = f'{self.model_name}:{id}'
+        raw = await self.redis_service.get(key)
+        if raw:
+            print('added')
+            schema = ArticleSchema.model_validate_json(raw)
+            model = ArticleModel.from_schema(schema)
+            return model
+        raise NotFoundError(self.model_name, {'id': id})
+
+    async def __cache(self, model: ArticleModel) -> None:
+        '''
+        Кеширует данные о SQLAlchemy-модели в Redis
+
+        Args:
+            model (ArticleModel): SQLAlchemy-модель
+        '''
+        schema = ArticleSchema.model_validate(model)
+        json_data = schema.model_dump_json()
+        key = f'{self.model_name}:{model.id}'
+        await self.redis_service.set(key, json_data)

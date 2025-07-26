@@ -2,7 +2,7 @@ from base.service import BaseService
 from article.models.model import ArticleModel
 from article.repositories.repository import ArticleRepository
 from sqlalchemy.ext.asyncio import AsyncSession
-from exceptions.exception import AlreadyExistsError
+from exceptions.exception import AlreadyExistsError, NotFoundError
 import random
 
 
@@ -23,7 +23,8 @@ class ArticleService(BaseService[ArticleModel]):
         '''
         super().__init__(
             ArticleRepository(db),
-            ArticleModel
+            ArticleModel,
+            model_name='Статья'
         )
 
     async def create(self, model: ArticleModel) -> ArticleModel:
@@ -36,11 +37,14 @@ class ArticleService(BaseService[ArticleModel]):
         filter = {"id": model.id}
         exists = await self.exists(filter)
         if exists:
-            raise AlreadyExistsError('Статья', filter)
+            raise AlreadyExistsError(self.model_name, filter)
         return await super().create(model)
 
     async def get_tranding(self) -> ArticleModel:
         '''
         Получение случайной статьи
         '''
-        return random.choice(await self.get_all())
+        models = await self.get_all()
+        if not models:
+            raise NotFoundError(self.model_name)
+        return random.choice(models)

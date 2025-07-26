@@ -27,7 +27,8 @@ class BaseService[M]:
     def __init__(
         self,
         repository: BaseRepository,
-        model_class: type[M]
+        model_class: type[M],
+        model_name: str
     ) -> None:
         '''
         Базовый класс бизнес-логики сущности
@@ -38,6 +39,7 @@ class BaseService[M]:
         '''
         self.repository = repository
         self.model_class = model_class
+        self.model_name = model_name
 
     async def create(self, model: M) -> M:
         return await self.repository.create(model)

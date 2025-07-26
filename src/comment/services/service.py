@@ -27,7 +27,8 @@ class CommentService(BaseService[CommentModel]):
         '''
         super().__init__(
             CommentRepository(db),
-            CommentModel
+            CommentModel,
+            model_name='Коментарий'
         )
         self.__article_service = article_service
 
@@ -47,15 +48,21 @@ class CommentService(BaseService[CommentModel]):
         article_exists = await self.__article_service.exists(article_filter)
 
         if not article_exists:
-            raise NotFoundError('Статья', article_filter)
+            raise NotFoundError(
+                self.__article_service.model_name,
+                article_filter
+            )
 
         exists = await self.exists(comment_filter)
         if exists:
-            raise AlreadyExistsError('Коментарий', comment_filter)
+            raise AlreadyExistsError(self.model_name, comment_filter)
         return await super().create(model)
 
     async def get_trending(self) -> CommentModel:
         '''
         Получение случайного коментария
         '''
-        return random.choice(await self.get_all())
+        models = await self.get_all()
+        if not models:
+            raise NotFoundError(self.model_name)
+        return random.choice(models)

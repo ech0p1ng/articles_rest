@@ -78,7 +78,7 @@ class ArticleService(BaseService[ArticleModel]):
 
     async def __get_from_cache(self, id: int) -> ArticleModel:
         '''
-        Получает из Redis кешированные данные о SQLAlchemy-модели
+        Получает из Redis кэшированные данные о SQLAlchemy-модели
 
         Args:
             id (int): ID SQLAlchemy-модели
@@ -89,13 +89,24 @@ class ArticleService(BaseService[ArticleModel]):
         Raises:
             NotFoundError: Не удалось найти
         '''
-        key = f'{self.model_name}:{id}'
-        raw = await self.redis_service.get(key)
+        raw = await self.redis_service.get(self.__get_key(id))
         if raw:
             schema = ArticleSchema.model_validate_json(raw)
             model = ArticleModel.from_schema(schema)
             return model
         raise NotFoundError(self.model_name, {'id': id})
+
+    async def __delete_from_cache(self, id: int) -> None:
+        '''
+        Удаление из Redis кэшированных данных
+
+        Args:
+            id (int): ID SQLAlchemy-модели
+
+        Raises:
+            NotFoundError: Не удалось найти
+        '''
+        await self.redis_service.delete(self.__get_key(id))
 
     async def __cache(
         self,
@@ -110,9 +121,9 @@ class ArticleService(BaseService[ArticleModel]):
             expire_time_seconds (int): Время жизни кэша в Redis. \
                 Если `expire_time_seconds <= 0`, то время жизни бесконечно
         '''
+        key = self.__get_key(model.id)
         schema = ArticleSchema.model_validate(model)
         json_data = schema.model_dump_json()
-        key = f'{self.model_name}:{model.id}'
         if expire_time_seconds > 0:
             await self.redis_service.set(
                 key,
@@ -121,3 +132,15 @@ class ArticleService(BaseService[ArticleModel]):
             )
         else:
             await self.redis_service.set(key, json_data)
+
+    def __get_key(self, id: int) -> str:
+        '''
+        Получение ключа значения для Redis
+
+        Args:
+            id (int): ID SQLAlchemy-модели
+
+        Returns:
+            str: Ключ вида `название_модели:id`
+        '''
+        return f'{self.model_name}:{id}'

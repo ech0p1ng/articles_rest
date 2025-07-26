@@ -70,11 +70,10 @@ class ArticleService(BaseService[ArticleModel]):
         try:
             model = await self.__get_from_cache(id)
         except NotFoundError:
+            print(f'Cached {self.model_name} not found')
             filter = {'id': id}
             model = await self.get(filter)
-            if not model:
-                raise NotFoundError(self.model_name, filter)
-            await self.__cache(model)
+            await self.__cache(model, expire_time_seconds=30)
         return model
 
     async def __get_from_cache(self, id: int) -> ArticleModel:
@@ -93,20 +92,32 @@ class ArticleService(BaseService[ArticleModel]):
         key = f'{self.model_name}:{id}'
         raw = await self.redis_service.get(key)
         if raw:
-            print('added')
             schema = ArticleSchema.model_validate_json(raw)
             model = ArticleModel.from_schema(schema)
             return model
         raise NotFoundError(self.model_name, {'id': id})
 
-    async def __cache(self, model: ArticleModel) -> None:
+    async def __cache(
+        self,
+        model: ArticleModel,
+        expire_time_seconds: int = 0
+    ) -> None:
         '''
         Кеширует данные о SQLAlchemy-модели в Redis
 
         Args:
             model (ArticleModel): SQLAlchemy-модель
+            expire_time_seconds (int): Время жизни кэша в Redis. \
+                Если `expire_time_seconds <= 0`, то время жизни бесконечно
         '''
         schema = ArticleSchema.model_validate(model)
         json_data = schema.model_dump_json()
         key = f'{self.model_name}:{model.id}'
-        await self.redis_service.set(key, json_data)
+        if expire_time_seconds > 0:
+            await self.redis_service.set(
+                key,
+                json_data,
+                ex=expire_time_seconds
+            )
+        else:
+            await self.redis_service.set(key, json_data)

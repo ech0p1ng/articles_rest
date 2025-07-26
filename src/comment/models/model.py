@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 class CommentModel(BaseModel):
     __tablename__ = 'comment'
-    title: Mapped[str] = mapped_column()
+    score: Mapped[int] = mapped_column()
     text: Mapped[str] = mapped_column()
 
     article_id: Mapped[int] = mapped_column(ForeignKey('article.id'))
@@ -28,10 +28,12 @@ class CommentModel(BaseModel):
             return cls(
                 id=schema.id,
                 text=schema.text,
-                score=schema.score
+                score=schema.score,
+                article_id=schema.article_id
             )
         else:
             return cls(
                 text=schema.text,
-                score=schema.score
+                score=schema.score,
+                article_id=schema.article_id
             )

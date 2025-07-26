@@ -12,6 +12,7 @@ def article_service(
 
 
 def comment_service(
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    article_service: ArticleService = Depends(article_service)
 ) -> CommentService:
-    return CommentService(db)
+    return CommentService(db, article_service)

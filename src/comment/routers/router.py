@@ -7,8 +7,21 @@ from comment.models.model import CommentModel
 router = APIRouter(prefix='/comments', tags=['Коментарии'])
 
 
+@router.post(
+    path='/',
+    summary='Создание коментария',
+    description='Создание коментария',
+    response_model=CommentSchema
+)
+async def create_comment(
+    schema: CommentSimpleSchema,
+    service: CommentService = Depends(comment_service)
+):
+    return await service.create(CommentModel.from_schema(schema))
+
+
 @router.get(
-    path='/tranding',
+    path='/trending',
     summary='Получение случайного коментария',
     description='Получение случайного коментария',
     response_model=CommentSchema
@@ -42,16 +55,3 @@ async def get_all_comments(
     service: CommentService = Depends(comment_service)
 ):
     return await service.get_all()
-
-
-@router.post(
-    path='/add',
-    summary='Создание коментария',
-    description='Создание коментария',
-    response_model=CommentSchema
-)
-async def create_comment(
-    schema: CommentSimpleSchema,
-    service: CommentService = Depends(comment_service)
-):
-    return await service.create(CommentModel.from_schema(schema))

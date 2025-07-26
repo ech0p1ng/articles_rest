@@ -7,8 +7,21 @@ from article.models.model import ArticleModel
 router = APIRouter(prefix='/articles', tags=['Статьи'])
 
 
+@router.post(
+    path='/',
+    summary='Создание статьи',
+    description='Создание статьи',
+    response_model=ArticleSchema
+)
+async def create_article(
+    schema: ArticleSimpleSchema,
+    service: ArticleService = Depends(article_service)
+):
+    return await service.create(ArticleModel.from_schema(schema))
+
+
 @router.get(
-    path='/tranding',
+    path='/trending',
     summary='Получение случайной статьи',
     description='Получение случайной статьи',
     response_model=ArticleSchema
@@ -42,16 +55,3 @@ async def get_all_articles(
     service: ArticleService = Depends(article_service)
 ):
     return await service.get_all()
-
-
-@router.post(
-    path='/add',
-    summary='Создание статьи',
-    description='Создание статьи',
-    response_model=ArticleSchema
-)
-async def create_article(
-    schema: ArticleSimpleSchema,
-    service: ArticleService = Depends(article_service)
-):
-    return await service.create(ArticleModel.from_schema(schema))

@@ -8,6 +8,7 @@ from config import settings
 
 from base.model import BaseModel
 from article.models.model import ArticleModel
+from comment.models.model import CommentModel
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

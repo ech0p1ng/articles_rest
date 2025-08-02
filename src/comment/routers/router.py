@@ -34,8 +34,8 @@ async def get_comment_tranding(
 
 @router.get(
     path='/{comment_id}',
-    summary='Получение коментария по ее ID',
-    description='Получение коментария по ее ID',
+    summary='Получение коментария по его ID',
+    description='Получение коментария по его ID',
     response_model=CommentSchema
 )
 async def get_comment(

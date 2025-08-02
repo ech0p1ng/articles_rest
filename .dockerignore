@@ -5,3 +5,4 @@ __pycache__
 *.pyd
 .mypy_cache
 .venv
+./.venv

@@ -23,21 +23,58 @@ class BaseRepository[T: BaseModel]:
         pass
 
     async def scalars_all(self, statement: Select[tuple[T]]) -> Sequence[T]:
+        '''
+        Возвращает все сущности из БД, соответствующие `statement`
+
+        Args:
+            statement (Select[tuple[T]]): Запрос в БД
+
+        Returns:
+            Sequence[T]: Последовательность сущностей из БД
+        '''
         return (await self.db.execute(statement)).scalars().all()
 
     async def scalars_one(self, statement: Select[tuple[T]]) -> T:
+        '''
+        Возвращает одну сущность из БД, соответствующую `statement`
+
+        Args:
+            statement (Select[tuple[T]]): Запрос в БД
+
+        Returns:
+            T: Сущность из БД
+        '''
         return (await self.db.execute(statement)).scalars().one()
 
     async def scalars_one_or_none(
         self,
         statement: Select[tuple[T]]
     ) -> T | None:
+        '''
+        Возвращает одну сущность из БД, соответствующую `statement` \
+            или `None`, если сущность не найдена
+
+        Args:
+            statement (Select[tuple[T]]): Запрос в БД
+
+        Returns:
+            T | None: Сущность из БД или `None`
+        '''
         return (await self.db.execute(statement)).scalars().one_or_none()
 
     async def scalars_unique(
         self,
         statement: Select[tuple[T]]
     ) -> ScalarResult[T] | None:
+        '''
+        Возвращает уникальные сущности из БД, соответствующие `statement`
+
+        Args:
+            statement (Select[tuple[T]]): Запрос в БД
+
+        Returns:
+            ScalarResult[T] | None: Уникальные сущности из БД или `None`
+        '''
         return (await self.db.execute(statement)).scalars().unique()
 
     async def create(self, model: T) -> T:

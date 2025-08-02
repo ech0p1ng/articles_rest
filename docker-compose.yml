@@ -4,12 +4,21 @@ services:
   app:
     build:
       dockerfile: Dockerfile
+    container_name: app
     volumes:
-      - .:/app
+      - .env:/app/.env
+      - .gitignore:/app/.gitignore
+      - ./alembic:/app/alembic
+      - ./src:/app/src
+      - ./alembic.ini:/app/alembic.ini
+      - ./entrypoint.sh:/app/entrypoint.sh
+      - ./poetry.lock:/app/poetry.lock
+      - ./pyproject.toml:/app/pyproject.toml
     ports:
       - "8080:8080"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     env_file:
       - .env
     restart: on-failure
@@ -27,7 +36,13 @@ services:
       POSTGRES_USER: ${POSTGRES__POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES__POSTGRES_PASS}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES__POSTGRES_USER} -d ${POSTGRES__POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     env_file:
       - .env
   
@@ -38,7 +53,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/var/lib/redis/data
+      - ./data/redis:/var/lib/redis/data
     environment:
       - REDIS_PASSWORD=${REDIS__REDIS_PASSWORD}
       - REDIS_PORT=${REDIS__REDIS_PORT}

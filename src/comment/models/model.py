@@ -24,6 +24,15 @@ class CommentModel(BaseModel):
         cls,
         schema: CommentSimpleSchema | CommentSchema
     ) -> 'CommentModel':
+        '''
+        Конвертирует Pydantic-схему в SQLAlchemy-модель
+
+        Args:
+            schema (CommentSimpleSchema | CommentSchema): Pydantic-схема
+
+        Returns:
+            CommentModel: SQLAlchemy-модель
+        '''
         if type(schema) is CommentSchema:
             return cls(
                 id=schema.id,

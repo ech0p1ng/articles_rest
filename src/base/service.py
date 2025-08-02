@@ -43,6 +43,15 @@ class BaseService[M]:
         self.model_name = model_name
 
     async def create(self, model: M) -> M:
+        '''
+        Создание сущности в БД
+
+        Args:
+            model (M): SQLAlchemy-модель сущности
+
+        Returns:
+            M: SQLAlchemy-модель созданной сущности
+        '''
         return await self.repository.create(model)
 
     async def get(
@@ -111,6 +120,16 @@ class BaseService[M]:
         Args:
             filter (dict[str, Any]): Фильтр поиска сущности в БД. \
                 `{"Название_атрибута": Значение_атрибута}`
+            model_attrs (list[_AttrType], optional): Дополнительно \
+                подгружаемые сложные аттрибуты SQLAlchemy модели. \
+                    Defaults to [].
+
+        Raises:
+            WrongFilterError: Ошибка, выбрасываемая в случае \
+                некорректности фильтра
+
+        Returns:
+            bool: `True` - существует, `False` - не существует
         '''
         if not self._is_correct_filter(filter):
             raise self._wrong_filter_error
@@ -133,9 +152,14 @@ class BaseService[M]:
         Поиск всех сущностей
 
         Args:
-            model_attrs (list[_AttrType]): Дополнительно подгружаемые сложные \
-                аттрибуты SQLAlchemy модели
+            model_attrs (list[_AttrType], optional): Дополнительно \
+                подгружаемые сложные аттрибуты SQLAlchemy модели. \
+                    Defaults to [].
+
+        Returns:
+            list[M]: Список найденных сущностей
         '''
+
         statement = self._add_model_attrs_to_statement(
             select(self.model_class),
             model_attrs
@@ -150,8 +174,11 @@ class BaseService[M]:
         '''
         Обновление сущности
 
-        Args: 
+        Args:
             model (M): SQLAlchemy-модель сущности
+
+        Returns:
+            M | None: SQLAlchemy-модель обновленной сущности
         '''
         return await self.repository.update(model)
 
@@ -162,6 +189,9 @@ class BaseService[M]:
         Args:
             filter (dict[str, Any]): Фильтр поиска сущности в БД. \
                 `{"Название_атрибута": Значение_атрибута}`
+
+        Raises:
+            NotFoundError: Не удалось найти сущность по фильтру
         '''
         exists = await self.exists(filter)
         if not exists:
@@ -176,6 +206,15 @@ class BaseService[M]:
     ) -> Select:
         '''
         Добавление стейтменту связанных атрибутов SQLAlchemy-модели
+
+        Args:
+            statement (Select): Запрос в БД
+            model_attrs (list[_AttrType], optional): Дополнительно \
+                подгружаемые сложные аттрибуты SQLAlchemy модели. \
+                    Defaults to [].
+
+        Returns:
+            Select: Запрос в БД со связанными атрибутами SQLAlchemy-модели
         '''
         if model_attrs:
             options = [selectinload(attr) for attr in model_attrs]
@@ -192,8 +231,13 @@ class BaseService[M]:
 
         Args:
             filter (dict[str, Any]): Проверяемый фильтр поиска
-            raise_exc (bool): Вызывать ли исключения в случае некорректности \
-                фильтра поиска (по-умолчанию - `True`)
+            raise_exc (bool, optional): Вызывать ли исключения в \
+                случае некорректности фильтра поиска \
+                    (по-умолчанию - `True`). Defaults to True.
+
+        Raises:
+            ValueError: Фильтр поиска должен включать в себя \
+                хотя бы одну пару `{"Название_атрибута": Значение_атрибута}`
 
         Returns:
             bool: `True` - фильтр корректный, иначе `False`

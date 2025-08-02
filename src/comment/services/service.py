@@ -34,13 +34,17 @@ class CommentService(BaseService[CommentModel]):
 
     async def create(self, model: CommentModel) -> CommentModel:
         '''
-        Создание коментария
+        Создание комментария
 
         Args:
-            model (CommentModel): SQLAlchemy-модель коментария
+            model (CommentModel): SQLAlchemy-модель комментария
 
         Raises:
-            NotFoundError: Коментарий или статья не найдены
+            NotNotFoundError: Статья не существует
+            AlreadyExistsError: Комментарий с таким ID уже существует
+
+        Returns:
+            CommentModel: SQLAlchemy-модель созданного комментария
         '''
         comment_filter = {"id": model.id}
 
@@ -60,7 +64,13 @@ class CommentService(BaseService[CommentModel]):
 
     async def get_trending(self) -> CommentModel:
         '''
-        Получение случайного коментария
+        Получение случайного комментария
+
+        Raises:
+            NotFoundError: Нет ни одного комментария
+
+        Returns:
+            CommentModel: SQLAlchemy-модель комментария
         '''
         models = await self.get_all()
         if not models:

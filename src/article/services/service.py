@@ -61,7 +61,7 @@ class ArticleService(BaseService[ArticleModel]):
         Получение кешированной статьи из Redis
 
         Args:
-            id (int): ID статьи`
+            id (int): ID статьи
 
         Returns:
             ArticleModel: SQLAlchemy-модель найденой статьи

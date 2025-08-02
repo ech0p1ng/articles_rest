@@ -20,6 +20,15 @@ class ArticleModel(BaseModel):
         cls,
         schema: ArticleSimpleSchema | ArticleSchema
     ) -> 'ArticleModel':
+        '''
+        Конвертирует Pydantic-схему в SQLAlchemy-модель
+
+        Args:
+            schema (ArticleSimpleSchema | ArticleSchema): Pydantic-схема
+
+        Returns:
+            ArticleModel: SQLAlchemy-модель
+        '''
         if type(schema) is ArticleSchema:
             return cls(
                 id=schema.id,
